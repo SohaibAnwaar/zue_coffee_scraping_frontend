@@ -1,8 +1,12 @@
+import { QueryClient, QueryClientProvider } from "react-query";
 import MapComponent from "./components/MapComponent";
 function App() {
+  const queryClient = new QueryClient();
   return (
     <>
-      <MapComponent />
+      <QueryClientProvider client={queryClient}>
+        <MapComponent />
+      </QueryClientProvider>
     </>
   );
 }

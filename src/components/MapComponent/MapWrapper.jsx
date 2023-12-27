@@ -1,17 +1,17 @@
 
-import { useEffect, useState } from "react";
+import { useEffect} from "react";
 import { MapContainer, TileLayer, Popup, Circle, CircleMarker, Marker, Tooltip, Rectangle, useMap } from "react-leaflet";
+import {useGetOutlets} from "../../hooks";
 
 const Legend = () => {
 const map = useMap();
   useEffect(() => {
     if (!map) return;
     const legend = L.control({ position: "bottomright" });
-
     let rows = [];
     legend.onAdd = () => {
       const div = L.DomUtil.create("div", "legend");
-      [{color: 'DC3545', label: 'More than 5km away'}, {color: 'FFC107', label: 'Within 5km'} ].map((category, index) => {
+      [{color: '5cb85c', label: 'More than 5km away'}, {color: 'd9534f', label: 'Within 5km'} ].map((category, index) => {
         return rows.push(`
             <div className="row" style="background: white; padding: 5px;">
             <div className=" display: flex; flex-direction: row;">
@@ -21,7 +21,6 @@ const map = useMap();
           `);
       });
       div.innerHTML = rows.join("");
-      console.log(div.innerHTML)
       return div;
     };
     map
@@ -54,7 +53,10 @@ const MyMarkers = ({ location, color }) => {
       icon={customMarkerIcon(color)}
       position={{  lat: location.latitude, lng: location.longitude }}
     >
-      <Popup>Hello</Popup>
+      <Popup>
+        <div><b>Name: </b>{location.name}</div>
+        <div><b>Address: </b> {location.address}</div>
+      </Popup>
     </Marker>
   )
 };
@@ -66,8 +68,7 @@ const locations = [
   { latitude: 42.8864, longitude: -78.8784, name: "Buffalo" },  // More than 5km away
   { latitude: 40.70933880547101, longitude: -74.00739290963774 },  // More than 5km away
 ];
-
-
+const {data, isLoading} = useGetOutlets();
 
 function haversineDistance(point1, point2) {
     const R = 6371; // Earth radius in kilometers
@@ -91,16 +92,25 @@ function toRad(degrees) {
 
 
 const redOptions = { weight: 1, color: 'red', fillOpacity: '0.1',   dashArray: '20, 20', dashOffset: '0' }
+if (isLoading) return (<div role="status">
+    <svg aria-hidden="true" class="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+        <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
+    </svg>
+    <span class="sr-only">Loading...</span>
+</div>);
 
   return (
     <div className="w-[50%] h-[70%]">
-  <MapContainer whenCreated={(data) => console.log(d)} center={[40.7128, -74.0060]} zoom={13} scrollWheelZoom={false} style={{height: "100%", width: '100%', borderRadius: 5, boxShadow: '5px 5px 5px rgba(0, 0, 0, 0.2)',}}>
+      {
+        data ? ( 
+  <MapContainer whenCreated={(data) => console.log(d)} center={[data[0]?.latitude, data[0]?.longitude]} zoom={13} scrollWheelZoom={false} style={{height: "100%", width: '100%', borderRadius: 5, boxShadow: '5px 5px 5px rgba(0, 0, 0, 0.2)',}}>
     <TileLayer
       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
     />
     {
-      locations.map((location, index, arr) => (
+      data?.map((location, index, arr) => (
         arr?.filter((_, innerIndex) => innerIndex !== index).some((item) => haversineDistance(location, item) < 5) ?
 (
 
@@ -120,6 +130,10 @@ const redOptions = { weight: 1, color: 'red', fillOpacity: '0.1',   dashArray: '
     }
     <Legend />
   </MapContainer>
+) : (
+  <h1 className="text-center text-xl font-semibold text-blue-600/100 dark:text-blue-500/100">Nothing Found!</h1>
+)
+      }
     </div>
   );
 };
